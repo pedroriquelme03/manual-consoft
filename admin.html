@@ -1,0 +1,153 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Admin — Manual do Cliente CEC</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800&family=JetBrains+Mono:wght@400;500&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="assets/css/style.css" />
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><rect width='100' height='100' rx='22' fill='%239b1c1c'/><text x='50' y='68' font-size='52' font-family='Arial' font-weight='bold' fill='white' text-anchor='middle'>C</text></svg>" />
+</head>
+<body>
+  <header class="topbar">
+    <button class="menu-toggle" id="menuToggle" aria-label="Menu">
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><line x1="3" y1="6" x2="21" y2="6"/><line x1="3" y1="12" x2="21" y2="12"/><line x1="3" y1="18" x2="21" y2="18"/></svg>
+    </button>
+    <a href="index.html" class="brand" style="text-decoration:none">
+      <img class="logo-img" src="assets/img/consoft.jpeg" alt="Consoft — Soluções em Informática" />
+      <span>Sistema CEC<small>Painel Administrativo</small></span>
+    </a>
+    <span class="badge-admin" id="adminBadge" style="display:none">ADMIN</span>
+    <div class="spacer"></div>
+    <span class="dim" id="userEmail" style="display:none"></span>
+    <a class="btn-ghost" href="index.html" target="_blank" id="viewSiteBtn" style="display:none">Ver site</a>
+    <button class="btn-ghost" id="changePwBtn" style="display:none">Alterar senha</button>
+    <button class="btn-ghost" id="logoutBtn" style="display:none">Sair</button>
+  </header>
+
+  <!-- LOGIN -->
+  <div id="loginView" class="login-wrap" style="display:none">
+    <form class="login-card" id="loginForm">
+      <h2>Área Administrativa</h2>
+      <p class="sub">Entre com suas credenciais para gerenciar o manual.</p>
+      <div id="loginAlert"></div>
+      <div class="field">
+        <label for="email">E-mail</label>
+        <input type="email" id="email" required autocomplete="username" placeholder="voce@empresa.com" />
+      </div>
+      <div class="field">
+        <label for="password">Senha</label>
+        <input type="password" id="password" required autocomplete="current-password" placeholder="••••••••" />
+      </div>
+      <button class="btn block" type="submit" id="loginBtn">Entrar</button>
+    </form>
+  </div>
+
+  <!-- APP -->
+  <div id="appView" class="admin-layout" style="display:none">
+    <div class="backdrop" id="backdrop"></div>
+    <aside class="admin-list" id="adminList">
+      <div class="list-head">
+        <input type="search" id="filterInput" placeholder="Filtrar tópicos..." autocomplete="off" />
+      </div>
+      <button class="btn block sm" id="newRootBtn" style="margin-bottom:12px">+ Nova PARTE</button>
+      <div id="tree"><div class="loading"><div class="spinner"></div>Carregando...</div></div>
+    </aside>
+
+    <main class="admin-main" id="editorPane">
+      <div class="empty-state" id="welcomePane">
+        <h2 style="color:var(--ink)">Bem-vindo ao painel</h2>
+        <p>Selecione um tópico à esquerda para editar, ou crie um novo.</p>
+      </div>
+
+      <div id="editorForm" style="display:none">
+        <div class="editor-head">
+          <h2 id="editorTitle">Editar tópico</h2>
+          <div class="editor-actions">
+            <button class="btn secondary sm" id="moveUpBtn" title="Mover para cima">↑</button>
+            <button class="btn secondary sm" id="moveDownBtn" title="Mover para baixo">↓</button>
+            <button class="btn secondary sm" id="addChildBtn">+ Subtópico</button>
+            <button class="btn danger sm" id="deleteBtn">Excluir</button>
+            <button class="btn sm" id="saveBtn">Salvar</button>
+          </div>
+        </div>
+        <div id="editorAlert"></div>
+
+        <div class="grid-2">
+          <div class="field">
+            <label for="fTitle">Título *</label>
+            <input type="text" id="fTitle" placeholder="Título do tópico" />
+          </div>
+          <div class="field">
+            <label for="fSlug">Identificador (slug)</label>
+            <input type="text" id="fSlug" placeholder="gerado automaticamente" />
+            <div class="hint">Usado no endereço: <code>#slug</code>. Deixe em branco para gerar do título.</div>
+          </div>
+        </div>
+        <div class="grid-2">
+          <div class="field">
+            <label for="fParent">Pertence a</label>
+            <select id="fParent"></select>
+            <div class="hint">Selecione a PARTE ou tópico pai. "— Nenhum —" cria uma PARTE principal.</div>
+          </div>
+          <div class="field">
+            <label for="fPage">Página de referência</label>
+            <input type="number" id="fPage" placeholder="Ex.: 19" />
+          </div>
+        </div>
+
+        <div class="field">
+          <label>Conteúdo</label>
+          <div class="wysiwyg">
+            <div class="wy-toolbar" id="toolbar">
+              <button type="button" data-cmd="bold" title="Negrito"><strong>N</strong></button>
+              <button type="button" data-cmd="italic" title="Itálico"><em>I</em></button>
+              <span class="divider"></span>
+              <button type="button" data-block="p" title="Parágrafo">¶</button>
+              <button type="button" data-block="h2" title="Título">H2</button>
+              <button type="button" data-block="h3" title="Subtítulo">H3</button>
+              <button type="button" data-cmd="insertUnorderedList" title="Lista">• Lista</button>
+              <span class="divider"></span>
+              <button type="button" id="btnLink" title="Inserir link">🔗 Link</button>
+              <button type="button" id="btnImage" title="Inserir imagem">🖼 Imagem</button>
+              <button type="button" id="btnScreen" title="Bloco de terminal">⌨ Tela</button>
+              <span class="divider"></span>
+              <button type="button" data-cmd="removeFormat" title="Limpar formatação">✕ Limpar</button>
+              <span class="divider"></span>
+              <button type="button" id="btnHtml" title="Editar HTML">&lt;/&gt; HTML</button>
+            </div>
+            <div class="wy-area article" id="wyArea" contenteditable="true"></div>
+            <textarea class="html-area" id="htmlArea" style="display:none" spellcheck="false"></textarea>
+          </div>
+          <input type="file" id="imgInput" accept="image/*" style="display:none" />
+        </div>
+      </div>
+    </main>
+  </div>
+
+  <div class="modal-back" id="modalBack">
+    <div class="modal">
+      <h3 id="modalTitle">Confirmar</h3>
+      <p id="modalText"></p>
+      <div class="modal-actions">
+        <button class="btn secondary" id="modalCancel">Cancelar</button>
+        <button class="btn danger" id="modalOk">Confirmar</button>
+      </div>
+    </div>
+  </div>
+
+  <div class="toast" id="toast"></div>
+
+  <footer class="site-footer">
+    <span>© 2026 · Todos os direitos reservados</span>
+    <span class="sep sep-hide">·</span>
+    <span>dev by <a href="https://fozdev.com.br/" target="_blank" rel="noopener noreferrer">FozDev</a></span>
+  </footer>
+
+  <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>
+  <script src="assets/js/supabase-config.js"></script>
+  <script src="assets/js/admin.js"></script>
+</body>
+</html>
