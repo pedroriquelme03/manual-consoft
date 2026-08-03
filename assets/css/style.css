@@ -373,6 +373,23 @@ pre.screen::-webkit-scrollbar-thumb { background: #334155; border-radius: 8px; }
 .modal-actions { display: flex; gap: 10px; justify-content: flex-end; margin-top: 20px; }
 
 .dim { color: var(--muted); font-size: .85rem; }
+
+/* Gerenciamento de usuários */
+.users-modal { max-width: 640px; }
+.users-head { display: flex; align-items: center; justify-content: space-between; gap: 12px; }
+.user-add { display: flex; gap: 8px; margin-bottom: 18px; flex-wrap: wrap; }
+.user-add input {
+  flex: 1; min-width: 150px; border: 1px solid var(--line); border-radius: 8px; padding: 10px 12px;
+  font-size: .9rem; font-family: var(--font); outline: none;
+}
+.user-add input:focus { border-color: var(--brand-600); box-shadow: 0 0 0 3px var(--brand-50); }
+.users-list { border: 1px solid var(--line); border-radius: 10px; overflow: hidden; max-height: 50vh; overflow-y: auto; }
+.user-row { display: flex; align-items: center; gap: 12px; padding: 12px 14px; border-bottom: 1px solid var(--line-soft); }
+.user-row:last-child { border-bottom: none; }
+.user-row .u-email { font-weight: 600; color: var(--ink); font-size: .92rem; overflow: hidden; text-overflow: ellipsis; white-space: nowrap; }
+.user-row .u-self { background: var(--brand-50); color: var(--brand-700); font-size: .64rem; padding: 2px 6px; border-radius: 5px; font-weight: 800; margin-left: 6px; }
+.user-row .u-meta { color: var(--muted); font-size: .74rem; margin-top: 2px; }
+.user-actions { display: flex; gap: 6px; flex: 0 0 auto; }
 .pill-count { background: var(--brand-50); color: var(--brand-700); font-weight: 700; font-size: .72rem; padding: 2px 8px; border-radius: 999px; }
 
 /* ---------- Rodapé fixo ---------- */

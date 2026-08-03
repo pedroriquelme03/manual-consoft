@@ -23,7 +23,7 @@
     <div class="spacer"></div>
     <span class="dim" id="userEmail" style="display:none"></span>
     <a class="btn-ghost" href="index.html" target="_blank" id="viewSiteBtn" style="display:none">Ver site</a>
-    <button class="btn-ghost" id="changePwBtn" style="display:none">Alterar senha</button>
+    <button class="btn-ghost" id="usersBtn" style="display:none">👥 Usuários</button>
     <button class="btn-ghost" id="logoutBtn" style="display:none">Sair</button>
   </header>
 
@@ -127,6 +127,23 @@
     </main>
   </div>
 
+  <div class="modal-back" id="usersModal">
+    <div class="modal users-modal">
+      <div class="users-head">
+        <h3 style="margin:0">Gerenciar usuários</h3>
+        <button class="btn secondary sm" id="usersClose">Fechar</button>
+      </div>
+      <p class="dim" style="margin:.4em 0 1em">Todo usuário criado aqui tem acesso total ao painel administrativo.</p>
+      <div id="usersAlert"></div>
+      <form id="userAddForm" class="user-add">
+        <input type="email" id="newUserEmail" placeholder="e-mail@exemplo.com" autocomplete="off" required />
+        <input type="password" id="newUserPass" placeholder="senha (mín. 6 caracteres)" autocomplete="new-password" required />
+        <button class="btn sm" type="submit">+ Adicionar usuário</button>
+      </form>
+      <div id="usersList" class="users-list"></div>
+    </div>
+  </div>
+
   <div class="modal-back" id="modalBack">
     <div class="modal">
       <h3 id="modalTitle">Confirmar</h3>
@@ -143,7 +160,7 @@
   <footer class="site-footer">
     <span>© 2026 · Todos os direitos reservados</span>
     <span class="sep sep-hide">·</span>
-    <span>dev by <a href="https://fozdev.com.br/" target="_blank" rel="noopener noreferrer">FozDev</a></span>
+    <span>Dev by <a href="https://fozdev.com.br/" target="_blank" rel="noopener noreferrer">FozDev</a></span>
   </footer>
 
   <script src="https://cdn.jsdelivr.net/npm/@supabase/supabase-js@2"></script>

@@ -10,7 +10,9 @@
   const el = {
     loginView: $('loginView'), appView: $('appView'), loginForm: $('loginForm'),
     loginAlert: $('loginAlert'), email: $('email'), password: $('password'), loginBtn: $('loginBtn'),
-    logoutBtn: $('logoutBtn'), userEmail: $('userEmail'), adminBadge: $('adminBadge'), viewSiteBtn: $('viewSiteBtn'), changePwBtn: $('changePwBtn'),
+    logoutBtn: $('logoutBtn'), userEmail: $('userEmail'), adminBadge: $('adminBadge'), viewSiteBtn: $('viewSiteBtn'),
+    usersBtn: $('usersBtn'), usersModal: $('usersModal'), usersClose: $('usersClose'), usersList: $('usersList'),
+    usersAlert: $('usersAlert'), userAddForm: $('userAddForm'), newUserEmail: $('newUserEmail'), newUserPass: $('newUserPass'),
     tree: $('tree'), filterInput: $('filterInput'), newRootBtn: $('newRootBtn'),
     welcomePane: $('welcomePane'), editorForm: $('editorForm'), editorTitle: $('editorTitle'), editorAlert: $('editorAlert'),
     fTitle: $('fTitle'), fSlug: $('fSlug'), fParent: $('fParent'), fPage: $('fPage'),
@@ -70,13 +72,13 @@
     if (session && session.user) {
       el.loginView.style.display = 'none';
       el.appView.style.display = 'flex';
-      el.logoutBtn.style.display = ''; el.viewSiteBtn.style.display = ''; el.adminBadge.style.display = ''; el.changePwBtn.style.display = '';
+      el.logoutBtn.style.display = ''; el.viewSiteBtn.style.display = ''; el.adminBadge.style.display = ''; el.usersBtn.style.display = '';
       el.userEmail.style.display = ''; el.userEmail.textContent = session.user.email;
       loadData();
     } else {
       el.appView.style.display = 'none';
       el.loginView.style.display = 'flex';
-      el.logoutBtn.style.display = 'none'; el.viewSiteBtn.style.display = 'none'; el.adminBadge.style.display = 'none'; el.changePwBtn.style.display = 'none';
+      el.logoutBtn.style.display = 'none'; el.viewSiteBtn.style.display = 'none'; el.adminBadge.style.display = 'none'; el.usersBtn.style.display = 'none';
       el.userEmail.style.display = 'none';
     }
   }
@@ -89,15 +91,6 @@
     if (error) alertBox(el.loginAlert, traduzErro(error.message), 'err');
   });
   el.logoutBtn.addEventListener('click', async () => { await client.auth.signOut(); current = null; });
-  el.changePwBtn.addEventListener('click', async () => {
-    const p1 = prompt('Nova senha (mínimo 6 caracteres):');
-    if (!p1) return;
-    if (p1.length < 6) { toast('A senha deve ter ao menos 6 caracteres.', 'err'); return; }
-    const p2 = prompt('Confirme a nova senha:');
-    if (p1 !== p2) { toast('As senhas não conferem.', 'err'); return; }
-    const { error } = await client.auth.updateUser({ password: p1 });
-    toast(error ? ('Erro: ' + error.message) : 'Senha alterada com sucesso.', error ? 'err' : 'ok');
-  });
 
   function traduzErro(m) {
     if (/invalid login credentials/i.test(m)) return 'E-mail ou senha incorretos.';
@@ -379,6 +372,79 @@
     }
   });
   el.fSlug.addEventListener('input', () => { el.fSlug.dataset.auto = ''; });
+
+  // ---------- gerenciamento de usuários (Edge Function) ----------
+  const USERS_FN = window.CEC_CONFIG.SUPABASE_URL + '/functions/v1/admin-users';
+  function fmtDate(iso) {
+    if (!iso) return '—';
+    try { return new Date(iso).toLocaleDateString('pt-BR', { day: '2-digit', month: '2-digit', year: 'numeric' }); }
+    catch (e) { return '—'; }
+  }
+  async function callUsers(action, payload = {}) {
+    const { data: { session } } = await client.auth.getSession();
+    if (!session) { toast('Sessão expirada. Entre novamente.', 'err'); return null; }
+    let res, body;
+    try {
+      res = await fetch(USERS_FN, {
+        method: 'POST',
+        headers: {
+          'Authorization': 'Bearer ' + session.access_token,
+          'apikey': window.CEC_CONFIG.SUPABASE_KEY,
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({ action, ...payload }),
+      });
+      body = await res.json().catch(() => ({}));
+    } catch (e) { toast('Falha de conexão com o servidor.', 'err'); return null; }
+    if (!res.ok) { toast(body.error || 'Erro na operação.', 'err'); return null; }
+    return body;
+  }
+  async function loadUsers() {
+    el.usersList.innerHTML = '<div class="dim" style="padding:16px">Carregando usuários...</div>';
+    const r = await callUsers('list');
+    if (!r) { el.usersList.innerHTML = '<div class="dim" style="padding:16px">Não foi possível carregar.</div>'; return; }
+    renderUsers(r.users || []);
+  }
+  function renderUsers(users) {
+    if (!users.length) { el.usersList.innerHTML = '<div class="dim" style="padding:16px">Nenhum usuário.</div>'; return; }
+    el.usersList.innerHTML = users.map(u =>
+      '<div class="user-row">' +
+        '<div style="flex:1;min-width:0">' +
+          '<div class="u-email">' + esc(u.email) + (u.is_self ? '<span class="u-self">VOCÊ</span>' : '') + '</div>' +
+          '<div class="u-meta">Criado em ' + fmtDate(u.created_at) + ' · Último acesso: ' + (u.last_sign_in_at ? fmtDate(u.last_sign_in_at) : 'nunca') + '</div>' +
+        '</div>' +
+        '<div class="user-actions">' +
+          '<button class="btn secondary sm" data-pw="' + u.id + '" data-email="' + esc(u.email) + '">Alterar senha</button>' +
+          '<button class="btn danger sm" data-del="' + u.id + '" data-email="' + esc(u.email) + '"' + (u.is_self ? ' disabled title="Não é possível excluir a si mesmo"' : '') + '>Excluir</button>' +
+        '</div>' +
+      '</div>').join('');
+    el.usersList.querySelectorAll('[data-pw]').forEach(b => b.addEventListener('click', () => changeUserPw(b.dataset.pw, b.dataset.email)));
+    el.usersList.querySelectorAll('[data-del]').forEach(b => { if (!b.disabled) b.addEventListener('click', () => deleteUser(b.dataset.del, b.dataset.email)); });
+  }
+  async function changeUserPw(id, email) {
+    const p = prompt('Nova senha para ' + email + ' (mínimo 6 caracteres):');
+    if (p === null) return;
+    if (p.length < 6) { toast('A senha deve ter ao menos 6 caracteres.', 'err'); return; }
+    const r = await callUsers('update_password', { id, password: p });
+    if (r) toast('Senha alterada com sucesso.', 'ok');
+  }
+  async function deleteUser(id, email) {
+    const ok = await confirmModal('Excluir usuário', 'O usuário “' + email + '” perderá o acesso ao painel administrativo.', 'Excluir');
+    if (!ok) return;
+    const r = await callUsers('delete', { id });
+    if (r) { toast('Usuário excluído.', 'ok'); loadUsers(); }
+  }
+  el.usersBtn.addEventListener('click', () => { alertBox(el.usersAlert, ''); el.usersModal.classList.add('open'); loadUsers(); });
+  el.usersClose.addEventListener('click', () => el.usersModal.classList.remove('open'));
+  el.usersModal.addEventListener('click', e => { if (e.target === el.usersModal) el.usersModal.classList.remove('open'); });
+  el.userAddForm.addEventListener('submit', async e => {
+    e.preventDefault();
+    const email = el.newUserEmail.value.trim();
+    const pass = el.newUserPass.value;
+    if (pass.length < 6) { alertBox(el.usersAlert, 'A senha deve ter ao menos 6 caracteres.', 'err'); return; }
+    const r = await callUsers('create', { email, password: pass });
+    if (r) { toast('Usuário criado com sucesso.', 'ok'); el.newUserEmail.value = ''; el.newUserPass.value = ''; alertBox(el.usersAlert, ''); loadUsers(); }
+  });
 
   // ---------- mobile ----------
   function closeSidebar() { el.adminList.classList.remove('open'); el.backdrop.classList.remove('open'); }
